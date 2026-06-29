@@ -25,9 +25,11 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . /var/www/html/
 
-# 7. Composer 실행하여 빠진 vendor 폴더(CI4 코어 및 라이브러리) 다운로드
-# (--no-dev 옵션으로 개발용 패키지는 제외하고 가볍게 설치)
+# 7. Composer 실행하여 빠진 vendor 폴더 다운로드
 RUN composer install --no-dev --optimize-autoloader
 
-# 8. CI4가 캐시와 세션을 기록할 수 있도록 'writable' 폴더에 쓰기 권한 부여
-RUN chown -R www-data:www-data /var/www/html/writable
+# --- 수정: 모든 파일의 소유권을 www-data로 변경하고, writable 폴더 쓰기 권한 부여 ---
+RUN chown -R www-data:www-data /var/www/html
+RUN chmod -R 755 /var/www/html
+RUN chmod -R 777 /var/www/html/writable
+# -------------------------------------------------------------------------
