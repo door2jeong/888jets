@@ -25,13 +25,19 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . /var/www/html/
 
-# 7. Composer 실행하여 빠진 vendor 폴더 다운로드
+# 7. Composer 설치 및 실행
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN composer install --no-dev --optimize-autoloader
 
-RUN mkdir -p /var/www/html/writable/cache /var/www/html/writable/logs /var/www/html/writable/session
-RUN chown -R www-data:www-data /var/www/html/writable
-RUN chmod -R 777 /var/www/html/writable
+# 8. 핵심: www-data 사용자가 웹 파일들을 완벽하게 제어하도록 권한 부여
+# writable 폴더뿐만 아니라 전체 프로젝트 파일의 소유권을 www-data로 변경
+RUN chown -R www-data:www-data /var/www/html
+RUN find /var/www/html -type d -exec chmod 755 {} \;
+RUN find /var/www/html -type f -exec chmod 644 {} \;
 
-# Apache가 실행될 때 권한 문제를 방지하기 위해 apache 설정의 사용자 확인
-RUN sed -i 's/www-data/root/g' /etc/apache2/envvars
-RUN sed -i 's/www-data/root/g' /etc/apache2/apache2.conf
+# writable 폴더는 쓰기/수정이 빈번하므로 775 권한 부여
+RUN chmod -R 775 /var/www/html/writable
+
+# (주의: 이 아래에 있던 sed 명령어들은 모두 삭제하세요!)
+
+# Apache는 자동으로 www-data 계정으로 실행됩니다.
