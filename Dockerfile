@@ -1,10 +1,12 @@
 # 1. 베이스 이미지 설정 (PHP 8.2 & Apache)
 FROM php:8.2-apache
 
-# 2. CI4 실행에 필요한 필수 PHP 확장 모듈 설치
+# 2. 필수 패키지 및 PHP 확장 모듈 설치 (git, unzip 추가 - 컴포저 사용을 위해)
 RUN apt-get update && apt-get install -y \
     libicu-dev \
     libzip-dev \
+    git \
+    unzip \
     && docker-php-ext-configure intl \
     && docker-php-ext-install intl mysqli pdo_mysql zip
 
@@ -16,8 +18,16 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
-# 5. 프로젝트의 모든 파일을 컨테이너 안으로 복사
+# 5. 최신 Composer 설치 (도커 이미지에서 바로 복사해오는 가장 깔끔한 방법)
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# 6. 작업 디렉토리 설정 및 파일 복사
+WORKDIR /var/www/html
 COPY . /var/www/html/
 
-# 6. CI4가 파일을 기록할 수 있도록 'writable' 폴더에 쓰기 권한 부여
+# 7. Composer 실행하여 빠진 vendor 폴더(CI4 코어 및 라이브러리) 다운로드
+# (--no-dev 옵션으로 개발용 패키지는 제외하고 가볍게 설치)
+RUN composer install --no-dev --optimize-autoloader
+
+# 8. CI4가 캐시와 세션을 기록할 수 있도록 'writable' 폴더에 쓰기 권한 부여
 RUN chown -R www-data:www-data /var/www/html/writable
