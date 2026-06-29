@@ -28,8 +28,10 @@ COPY . /var/www/html/
 # 7. Composer 실행하여 빠진 vendor 폴더 다운로드
 RUN composer install --no-dev --optimize-autoloader
 
-# --- 수정: 모든 파일의 소유권을 www-data로 변경하고, writable 폴더 쓰기 권한 부여 ---
-RUN chown -R www-data:www-data /var/www/html
-RUN chmod -R 755 /var/www/html
+RUN mkdir -p /var/www/html/writable/cache /var/www/html/writable/logs /var/www/html/writable/session
+RUN chown -R www-data:www-data /var/www/html/writable
 RUN chmod -R 777 /var/www/html/writable
-# -------------------------------------------------------------------------
+
+# Apache가 실행될 때 권한 문제를 방지하기 위해 apache 설정의 사용자 확인
+RUN sed -i 's/www-data/root/g' /etc/apache2/envvars
+RUN sed -i 's/www-data/root/g' /etc/apache2/apache2.conf
