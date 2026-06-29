@@ -46,4 +46,14 @@ $paths = new Config\Paths();
 // 2. Load the framework bootstrap file.
 require $paths->systemDirectory . '/Boot.php';
 
-exit(CodeIgniter\Boot::bootWeb($paths));
+try {
+    exit(CodeIgniter\Boot::bootWeb($paths));
+} catch (\Throwable $e) {
+    echo "<div style='padding:20px; background:#ffe6e6; border:2px solid red;'>";
+    echo "<h1 style='color:red;'>🔥 진짜 에러 원인 발견 🔥</h1>";
+    echo "<h3><b>메시지:</b> " . $e->getMessage() . "</h3>";
+    echo "<b>발생 파일:</b> " . $e->getFile() . " (라인: " . $e->getLine() . ")<br><br>";
+    echo "<b>스택 트레이스:</b><pre style='background:#f8f9fa; padding:10px;'>" . $e->getTraceAsString() . "</pre>";
+    echo "</div>";
+    exit(1);
+}
